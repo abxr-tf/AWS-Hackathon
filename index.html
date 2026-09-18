@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReliefPulse | Hyper-Local Aid Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ReliefPulse — Emergency Operations Console
+   Design tokens
+   ============================================================ */
+:root{
+  --bg:#080D16;
+  --surface:#0F172A;
+  --surface-2:#141F35;
+  --surface-3:#1B2942;
+  --line:#22314D;
+  --line-soft:#1A2540;
+
+  --ink:#E8EEF9;
+  --ink-2:#A7B6D0;
+  --ink-3:#6F82A3;
+
+  --crimson:#FF4557;
+  --crimson-dim:#7A1622;
+  --emerald:#10D18B;
+  --emerald-dim:#0B5A3E;
+  --amber:#F7B23B;
+  --amber-dim:#6B4A0E;
+  --cyan:#31DDF0;
+  --cyan-dim:#0C4E58;
+
+  --radius-s:6px;
+  --radius-m:10px;
+  --radius-l:16px;
+  --shadow:0 18px 48px rgba(2,6,16,.55);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+:root:not([data-theme="light"]){color-scheme:dark;}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="light"]){color-scheme:dark;}
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(900px 480px at 12% -10%, rgba(255,69,87,.10), transparent 65%),
+    radial-gradient(760px 420px at 92% 0%, rgba(49,221,240,.09), transparent 60%);
+}
+button,input,select,textarea{font:inherit;color:inherit;}
+button{cursor:pointer;background:none;border:none;}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px;}
+::selection{background:rgba(49,221,240,.28);}
+img{max-width:100%;}
+
+/* ---------- App shell ---------- */
+.app{position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column;}
+.wrap{width:min(1560px,100%);margin-inline:auto;padding-inline:clamp(12px,2.4vw,28px);}
+
+/* ---------- Header ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(8,13,22,.86);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line-soft);
+}
+.topbar-in{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;}
+.sigil{
+  width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(150deg,#1B2942,#0C1424);
+  border:1px solid var(--line);position:relative;
+}
+.sigil::after{
+  content:"";position:absolute;inset:-3px;border-radius:13px;
+  border:1px solid rgba(255,69,87,.45);animation:halo 2.6s ease-out infinite;
+}
+@keyframes halo{0%{transform:scale(.92);opacity:.9}70%,100%{transform:scale(1.22);opacity:0}}
+.brand h1{
+  margin:0;font-size:clamp(15px,1.5vw,18px);font-weight:700;letter-spacing:-.018em;
+  white-space:nowrap;
+}
+.brand h1 span{color:var(--ink-3);font-weight:500;}
+.brand small{display:block;font-size:11.5px;color:var(--ink-3);font-weight:500;letter-spacing:.01em;}
+
+.status-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 13px 7px 10px;border-radius:999px;
+  background:rgba(255,69,87,.10);border:1px solid rgba(255,69,87,.38);
+  color:#FFC3C9;font-size:12.5px;font-weight:600;white-space:nowrap;
+}
+.beacon{width:8px;height:8px;border-radius:50%;background:var(--crimson);position:relative;flex:none;}
+.beacon::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--crimson);animation:ping 1.7s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.75}80%,100%{transform:scale(3.2);opacity:0}}
+
+.top-actions{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap;}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 16px;border-radius:var(--radius-m);
+  font-size:13.5px;font-weight:600;letter-spacing:-.005em;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  transition:transform .12s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.btn:hover{background:var(--surface-3);border-color:#2E3F63;}
+.btn:active{transform:translateY(1px);}
+.btn svg{width:16px;height:16px;flex:none;}
+.btn-sos{background:linear-gradient(175deg,#FF5566,#D81F34);border-color:#FF7482;color:#fff;
+  box-shadow:0 0 0 0 rgba(255,69,87,.5);animation:sosGlow 2.6s ease-out infinite;}
+.btn-sos:hover{background:linear-gradient(175deg,#FF6676,#E7283E);border-color:#FF9AA4;}
+@keyframes sosGlow{0%{box-shadow:0 0 0 0 rgba(255,69,87,.45)}70%,100%{box-shadow:0 0 0 14px rgba(255,69,87,0)}}
+.btn-aid{background:linear-gradient(175deg,#16D695,#07996A);border-color:#3BE7AE;color:#03261B;}
+.btn-aid:hover{background:linear-gradient(175deg,#2BE5A6,#0BAA77);}
+.btn-ai{background:linear-gradient(175deg,#1D3A52,#0E2233);border-color:#2A6B7E;color:#B7F3FB;}
+.btn-ai:hover{border-color:var(--cyan);background:#16384C;}
+.btn-ghost{background:transparent;}
+.btn-sm{padding:7px 11px;font-size:12.5px;border-radius:8px;}
+
+/* ---------- Metrics ---------- */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-block:16px 4px;}
+.metric{
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,var(--surface),#0C1526);
+  border:1px solid var(--line-soft);border-radius:var(--radius-l);
+  padding:15px 16px 14px;
+}
+.metric::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--cyan));opacity:.9;}
+.metric dt{margin:0 0 4px;font-size:11.5px;color:var(--ink-3);font-weight:600;letter-spacing:.012em;}
+.metric dd{margin:0;display:flex;align-items:baseline;gap:8px;}
+.metric .num{font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.03em;line-height:1.05;
+  font-variant-numeric:tabular-nums;color:var(--accent,var(--ink));}
+.metric .sub{font-size:11.5px;color:var(--ink-3);font-weight:500;}
+.metric .spark{position:absolute;right:12px;bottom:10px;opacity:.5;}
+
+/* ---------- Control bar ---------- */
+.controls{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:14px 0 16px;
+}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line-soft);border-radius:11px;padding:3px;gap:3px;}
+.seg button{padding:8px 15px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-3);display:inline-flex;gap:7px;align-items:center;}
+.seg button svg{width:15px;height:15px;}
+.seg button[aria-pressed="true"]{background:var(--surface-3);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);}
+.chipset{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.chipset-label{font-size:11.5px;color:var(--ink-3);font-weight:600;margin-right:2px;}
+.chip{
+  padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  transition:border-color .15s,background .15s,color .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.75;}
+.chip:hover{border-color:#31456C;color:var(--ink);}
+.chip[aria-pressed="true"]{background:var(--surface-3);color:var(--ink);border-color:#3A5183;}
+.chip.u-critical[aria-pressed="true"]{background:rgba(255,69,87,.14);border-color:rgba(255,69,87,.55);color:#FFB3BB;}
+.chip.u-high[aria-pressed="true"]{background:rgba(247,178,59,.13);border-color:rgba(247,178,59,.5);color:#FFD79A;}
+.chip.u-moderate[aria-pressed="true"]{background:rgba(49,221,240,.12);border-color:rgba(49,221,240,.45);color:#A9EEF8;}
+.controls .spacer{flex:1 1 auto;}
+.count-readout{font-family:var(--mono);font-size:12px;color:var(--ink-3);white-space:nowrap;}
+
+/* ---------- Main grid ---------- */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 358px;gap:16px;padding-bottom:28px;align-items:start;}
+.panel{
+  background:linear-gradient(180deg,var(--surface),#0B1322);
+  border:1px solid var(--line-soft);border-radius:var(--radius-l);
+  overflow:hidden;
+}
+.panel-head{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px;border-bottom:1px solid var(--line-soft);
+}
+.panel-head h2{margin:0;font-size:14px;font-weight:700;letter-spacing:-.01em;}
+.panel-head .hint{font-size:11.5px;color:var(--ink-3);margin-left:auto;font-family:var(--mono);}
+
+/* ---------- Map ---------- */
+.mapwrap{position:relative;height:clamp(440px,64vh,720px);background:#060A12;overflow:hidden;}
+.mapcanvas{position:absolute;inset:0;transform-origin:center;transition:transform .35s cubic-bezier(.22,.8,.3,1);}
+.mapcanvas svg{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.pin{
+  position:absolute;transform:translate(-50%,-100%);
+  display:grid;place-items:center;
+  width:30px;height:30px;border-radius:50% 50% 50% 4px;rotate:-45deg;
+  border:1.5px solid rgba(255,255,255,.28);
+  cursor:pointer;z-index:3;
+  transition:filter .15s ease, scale .15s ease;
+}
+.pin>span{rotate:45deg;font-size:13px;line-height:1;display:block;}
+.pin:hover,.pin:focus-visible{scale:1.14;filter:brightness(1.18);z-index:6;}
+.pin[data-kind="sos"]{background:linear-gradient(150deg,#FF5566,#B8142A);box-shadow:0 6px 16px rgba(255,69,87,.4);}
+.pin[data-kind="offer"]{background:linear-gradient(150deg,#1FDFA0,#068259);box-shadow:0 6px 16px rgba(16,209,139,.35);}
+.pin[data-kind="hazard"]{background:linear-gradient(150deg,#FFC759,#C07C05);box-shadow:0 6px 16px rgba(247,178,59,.35);}
+.pin[data-state="resolved"]{opacity:.45;filter:saturate(.35);}
+.pulse{
+  position:absolute;transform:translate(-50%,-50%);
+  width:26px;height:26px;border-radius:50%;background:var(--crimson);
+  opacity:.55;z-index:2;animation:pinPulse 1.9s ease-out infinite;pointer-events:none;
+}
+@keyframes pinPulse{0%{transform:translate(-50%,-50%) scale(.5);opacity:.5}100%{transform:translate(-50%,-50%) scale(3.4);opacity:0}}
+.pin-selected{outline:2px solid #fff;outline-offset:3px;}
+
+.map-tools{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:6px;z-index:8;}
+.map-tools button{
+  width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
+  background:rgba(15,23,42,.9);border:1px solid var(--line);color:var(--ink-2);backdrop-filter:blur(6px);
+}
+.map-tools button:hover{color:var(--ink);border-color:#31456C;}
+.legend{
+  position:absolute;right:12px;bottom:12px;z-index:8;
+  background:rgba(10,16,28,.9);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+  display:grid;gap:7px;font-size:11.5px;color:var(--ink-2);
+}
+.legend div{display:flex;align-items:center;gap:8px;}
+.legend i{width:9px;height:9px;border-radius:50%;display:block;flex:none;}
+.map-scale{
+  position:absolute;left:12px;bottom:12px;z-index:8;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+  border-left:1px solid var(--ink-3);border-right:1px solid var(--ink-3);border-bottom:1px solid var(--ink-3);
+  padding:0 8px 3px;
+}
+.callout{
+  position:absolute;z-index:20;width:262px;transform:translate(-50%,calc(-100% - 40px));
+  background:rgba(13,20,34,.97);border:1px solid var(--line);border-radius:13px;
+  box-shadow:var(--shadow);padding:13px 14px;
+  animation:popIn .18s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,calc(-100% - 28px)) scale(.96)}}
+.callout::after{
+  content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;
+  background:rgba(13,20,34,.97);border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  transform:translateX(-50%) rotate(45deg);
+}
+.callout h4{margin:0 0 5px;font-size:13.5px;}
+.callout p{margin:0 0 9px;font-size:12.5px;color:var(--ink-2);}
+.callout .callout-x{position:absolute;right:8px;top:7px;color:var(--ink-3);font-size:15px;line-height:1;padding:3px 5px;border-radius:6px;}
+.callout .callout-x:hover{color:var(--ink);background:var(--surface-3);}
+
+/* ---------- Feed ---------- */
+.feed{padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;
+  max-height:clamp(440px,64vh,720px);overflow-y:auto;}
+.card{
+  background:var(--surface-2);border:1px solid var(--line-soft);border-radius:13px;
+  padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;
+  transition:border-color .15s ease;
+}
+.card:hover{border-color:#2C3E62;}
+.card[data-urgency="critical"]{border-left:3px solid var(--crimson);}
+.card[data-urgency="high"]{border-left:3px solid var(--amber);}
+.card[data-urgency="moderate"]{border-left:3px solid var(--cyan);}
+.card[data-kind="offer"]{border-left:3px solid var(--emerald);}
+.card[data-state="resolved"]{opacity:.62;}
+.card-top{display:flex;align-items:flex-start;gap:9px;}
+.card-top h3{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.012em;line-height:1.3;}
+.card-top .who{font-size:12px;color:var(--ink-3);margin-top:2px;}
+.tag{
+  font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:6px;letter-spacing:.02em;white-space:nowrap;
+}
+.tag-critical{background:rgba(255,69,87,.16);color:#FF98A4;border:1px solid rgba(255,69,87,.32);}
+.tag-high{background:rgba(247,178,59,.14);color:#FFCE84;border:1px solid rgba(247,178,59,.3);}
+.tag-moderate{background:rgba(49,221,240,.13);color:#98E9F5;border:1px solid rgba(49,221,240,.28);}
+.tag-offer{background:rgba(16,209,139,.14);color:#6EEFC0;border:1px solid rgba(16,209,139,.3);}
+.tag-hazard{background:rgba(247,178,59,.14);color:#FFCE84;border:1px solid rgba(247,178,59,.3);}
+.card p.body{margin:0;font-size:13px;color:var(--ink-2);line-height:1.52;}
+.needs{display:flex;flex-wrap:wrap;gap:6px;}
+.need{font-size:11px;padding:3.5px 8px;border-radius:999px;background:var(--surface-3);color:var(--ink-2);border:1px solid var(--line);}
+.meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-3);font-family:var(--mono);}
+.card-actions{display:flex;gap:8px;margin-top:auto;padding-top:2px;flex-wrap:wrap;}
+.matched-note{
+  font-size:12px;background:rgba(16,209,139,.08);border:1px solid rgba(16,209,139,.26);
+  color:#8BF0CB;border-radius:9px;padding:8px 10px;display:flex;gap:8px;align-items:flex-start;
+}
+.matched-note svg{width:14px;height:14px;flex:none;margin-top:2px;}
+.evidence{border-radius:9px;border:1px solid var(--line);max-height:120px;object-fit:cover;width:100%;}
+
+/* ---------- Side rail ---------- */
+.rail{display:grid;gap:16px;}
+.triage-cta{
+  padding:16px;display:grid;gap:12px;
+  background:
+    radial-gradient(420px 160px at 100% 0%, rgba(49,221,240,.13), transparent 70%),
+    linear-gradient(180deg,var(--surface),#0B1322);
+  border:1px solid rgba(49,221,240,.24);border-radius:var(--radius-l);
+}
+.triage-cta h2{margin:0;font-size:15px;letter-spacing:-.015em;}
+.triage-cta p{margin:0;font-size:12.8px;color:var(--ink-2);line-height:1.5;}
+.model-line{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-3);font-family:var(--mono);}
+.model-line i{width:6px;height:6px;border-radius:50%;background:var(--cyan);display:block;}
+
+.log{max-height:352px;overflow-y:auto;padding:6px 0;}
+.log li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:9px 16px;font-size:12.5px;border-bottom:1px solid rgba(26,37,64,.55);}
+.log li:last-child{border-bottom:none;}
+.log time{font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:1px;}
+.log .ev{color:var(--ink-2);line-height:1.45;}
+.log .ev b{color:var(--ink);font-weight:600;}
+.log li[data-sev="sos"] .ev b{color:#FF98A4;}
+.log li[data-sev="match"] .ev b{color:#6EEFC0;}
+.log li[data-sev="hazard"] .ev b{color:#FFCE84;}
+
+.arch{padding:0 16px 14px;font-size:12.3px;color:var(--ink-2);}
+.arch details{border-top:1px solid var(--line-soft);padding-top:10px;}
+.arch summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:13px;list-style:none;display:flex;gap:8px;align-items:center;}
+.arch summary::-webkit-details-marker{display:none;}
+.arch summary::before{content:"▸";color:var(--ink-3);transition:transform .15s;}
+.arch details[open] summary::before{transform:rotate(90deg);}
+.arch dl{margin:10px 0 0;display:grid;gap:8px;}
+.arch dt{font-family:var(--mono);font-size:11px;color:var(--cyan);}
+.arch dd{margin:2px 0 0;color:var(--ink-3);font-size:12px;line-height:1.45;}
+
+/* ---------- Modal ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:90;background:rgba(4,8,15,.72);backdrop-filter:blur(6px);
+  display:grid;place-items:center;padding:16px;
+  animation:fade .18s ease;
+}
+@keyframes fade{from{opacity:0}}
+.modal{
+  width:min(620px,100%);max-height:min(88vh,860px);overflow-y:auto;
+  background:linear-gradient(180deg,#121C2F,#0B1322);
+  border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);
+  animation:riseIn .24s cubic-bezier(.2,.85,.3,1);
+}
+.modal.wide{width:min(760px,100%);}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px) scale(.975)}}
+.modal-head{
+  position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:flex-start;
+  padding:18px 20px 14px;background:linear-gradient(180deg,#121C2F,rgba(18,28,47,.94));
+  border-bottom:1px solid var(--line-soft);
+}
+.modal-head h2{margin:0;font-size:17px;letter-spacing:-.02em;}
+.modal-head p{margin:4px 0 0;font-size:12.8px;color:var(--ink-3);}
+.modal-x{margin-left:auto;color:var(--ink-3);font-size:20px;line-height:1;padding:4px 8px;border-radius:8px;}
+.modal-x:hover{color:var(--ink);background:var(--surface-3);}
+.modal-body{padding:18px 20px 22px;display:grid;gap:16px;}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+
+.field{display:grid;gap:6px;}
+.field label{font-size:12.5px;font-weight:600;color:var(--ink-2);}
+.field .req{color:var(--crimson);}
+.field input[type=text],.field input[type=tel],.field select,.field textarea{
+  width:100%;padding:11px 13px;border-radius:10px;
+  background:#0A1220;border:1px solid var(--line);color:var(--ink);
+  transition:border-color .15s,box-shadow .15s;font-size:14px;
+}
+.field textarea{min-height:112px;resize:vertical;line-height:1.55;}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(49,221,240,.16);
+}
+.field .help{font-size:11.5px;color:var(--ink-3);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.checkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.check{
+  display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;
+  background:#0A1220;border:1px solid var(--line);font-size:13px;cursor:pointer;
+  transition:border-color .14s,background .14s;
+}
+.check:hover{border-color:#31456C;}
+.check input{accent-color:var(--emerald);width:15px;height:15px;}
+.check:has(input:checked){border-color:rgba(16,209,139,.55);background:rgba(16,209,139,.09);}
+.radio-row{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-pill{
+  padding:9px 15px;border-radius:10px;border:1px solid var(--line);background:#0A1220;
+  font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-2);
+}
+.radio-pill input{display:none;}
+.radio-pill:has(input:checked){color:var(--ink);}
+.radio-pill.u-critical:has(input:checked){background:rgba(255,69,87,.15);border-color:var(--crimson);color:#FFB3BB;}
+.radio-pill.u-high:has(input:checked){background:rgba(247,178,59,.14);border-color:var(--amber);color:#FFD79A;}
+.radio-pill.u-moderate:has(input:checked){background:rgba(49,221,240,.13);border-color:var(--cyan);color:#A9EEF8;}
+
+.drop{
+  border:1.5px dashed #2C3E62;border-radius:13px;padding:20px;text-align:center;
+  background:#0A1220;transition:border-color .16s,background .16s;cursor:pointer;
+}
+.drop:hover,.drop.over{border-color:var(--cyan);background:rgba(49,221,240,.06);}
+.drop svg{width:26px;height:26px;color:var(--ink-3);}
+.drop p{margin:8px 0 2px;font-size:13px;color:var(--ink-2);}
+.drop small{font-size:11.5px;color:var(--ink-3);}
+.drop-preview{display:flex;gap:12px;align-items:center;text-align:left;}
+.drop-preview img{width:78px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);}
+.s3key{font-family:var(--mono);font-size:10.8px;color:var(--cyan);word-break:break-all;}
+.uploadbar{height:4px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:7px;}
+.uploadbar i{display:block;height:100%;width:0;background:var(--cyan);transition:width .25s ease;}
+
+.locpick{display:flex;gap:10px;align-items:center;}
+.locpick .coord{font-family:var(--mono);font-size:11.5px;color:var(--cyan);}
+.range-row{display:flex;align-items:center;gap:12px;}
+.range-row input[type=range]{flex:1;accent-color:var(--emerald);}
+.range-row output{font-family:var(--mono);font-size:13px;color:var(--emerald);min-width:52px;text-align:right;}
+
+/* ---------- Triage results ---------- */
+.mic-row{display:flex;gap:8px;align-items:center;}
+.mic{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#0A1220;display:grid;place-items:center;color:var(--ink-2);flex:none;}
+.mic:hover{border-color:var(--cyan);color:var(--cyan);}
+.mic[data-rec="1"]{border-color:var(--crimson);color:var(--crimson);animation:sosGlow 1.6s infinite;}
+.samples{display:flex;gap:7px;flex-wrap:wrap;}
+.samples button{font-size:11.5px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink-3);background:#0A1220;}
+.samples button:hover{color:var(--ink);border-color:#31456C;}
+
+.result{display:grid;gap:14px;border-top:1px solid var(--line-soft);padding-top:16px;}
+.score-block{display:flex;gap:16px;align-items:center;}
+.dial{width:88px;height:88px;flex:none;position:relative;}
+.dial svg{transform:rotate(-90deg);}
+.dial .val{position:absolute;inset:0;display:grid;place-items:center;font-size:25px;font-weight:700;letter-spacing:-.03em;}
+.dial .val small{font-size:11px;color:var(--ink-3);font-weight:500;display:block;text-align:center;margin-top:-2px;}
+.score-meta{display:grid;gap:7px;min-width:0;}
+.score-meta h3{margin:0;font-size:15px;letter-spacing:-.015em;}
+.score-meta p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5;}
+.kv{display:grid;gap:8px;}
+.kv-row{display:grid;grid-template-columns:118px 1fr;gap:10px;font-size:13px;align-items:start;}
+.kv-row dt{color:var(--ink-3);font-size:12px;padding-top:2px;}
+.match-list{display:grid;gap:8px;}
+.match{
+  display:flex;gap:11px;align-items:center;padding:11px 12px;border-radius:11px;
+  background:rgba(16,209,139,.07);border:1px solid rgba(16,209,139,.24);
+}
+.match .avatar{width:34px;height:34px;border-radius:10px;background:var(--emerald-dim);color:#8BF0CB;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none;}
+.match .m-body{min-width:0;flex:1;}
+.match .m-body strong{font-size:13.5px;display:block;}
+.match .m-body span{font-size:11.5px;color:var(--ink-3);}
+.match .m-score{font-family:var(--mono);font-size:11.5px;color:#6EEFC0;white-space:nowrap;}
+.thinking{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2);}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--cyan);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{font-size:12px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:9px;padding:9px 11px;}
+
+/* ---------- Toasts ---------- */
+.toasts{position:fixed;right:16px;bottom:16px;z-index:120;display:grid;gap:10px;width:min(340px,calc(100vw - 32px));}
+.toast{
+  background:rgba(16,25,42,.97);border:1px solid var(--line);border-left:3px solid var(--cyan);
+  border-radius:12px;padding:12px 13px;box-shadow:var(--shadow);
+  display:flex;gap:10px;align-items:flex-start;animation:slideIn .22s cubic-bezier(.2,.85,.3,1);
+}
+.toast.out{animation:slideOut .25s ease forwards;}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}}
+@keyframes slideOut{to{opacity:0;transform:translateX(24px)}}
+.toast[data-kind="sos"]{border-left-color:var(--crimson);}
+.toast[data-kind="match"]{border-left-color:var(--emerald);}
+.toast[data-kind="hazard"]{border-left-color:var(--amber);}
+.toast strong{display:block;font-size:13px;margin-bottom:2px;}
+.toast p{margin:0;font-size:12.3px;color:var(--ink-2);line-height:1.45;}
+.toast svg{width:17px;height:17px;flex:none;margin-top:1px;}
+
+/* ---------- Footer ---------- */
+.foot{border-top:1px solid var(--line-soft);padding:16px 0 26px;color:var(--ink-3);font-size:12px;
+  display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.foot .dot-sep{opacity:.4;}
+
+.empty{padding:46px 20px;text-align:center;color:var(--ink-3);grid-column:1/-1;}
+.empty h3{margin:0 0 6px;color:var(--ink-2);font-size:15px;}
+.empty p{margin:0;font-size:13px;}
+
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px){
+  .stage{grid-template-columns:1fr;}
+  .rail{grid-template-columns:1fr 1fr;display:grid;}
+  .rail .arch-panel{grid-column:1/-1;}
+}
+@media (max-width:860px){
+  .metrics{grid-template-columns:1fr 1fr;}
+  .rail{grid-template-columns:1fr;}
+  .top-actions{width:100%;margin-left:0;}
+  .top-actions .btn{flex:1;justify-content:center;}
+  .brand h1 span{display:none;}
+  .grid-2{grid-template-columns:1fr;}
+  .mapwrap{height:min(62vh,480px);}
+  .callout{width:220px;}
+}
+@media (max-width:520px){
+  .metrics{grid-template-columns:1fr 1fr;gap:9px;}
+  .metric{padding:12px;}
+  .feed{grid-template-columns:1fr;}
+  .toasts{left:12px;right:12px;width:auto;}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ============ HEADER ============ -->
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <div class="brand">
+      <div class="sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FF6B7A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12h4l2.5-7 4 14 2.5-7H22"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ReliefPulse <span>| Hyper-Local Aid Dispatch</span></h1>
+        <small id="sector-line">Sector 7 · Riverside &amp; Old Mill · storm response night 2</small>
+      </div>
+    </div>
+
+    <span class="status-badge"><span class="beacon"></span>Active Emergency Mode: Online</span>
+
+    <div class="top-actions">
+      <button class="btn btn-ai" data-open="triage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg>
+        Describe an emergency
+      </button>
+      <button class="btn btn-sos" data-open="sos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4.5M12 17h.01"/><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        I need help (SOS)
+      </button>
+      <button class="btn btn-aid" data-open="offer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/></svg>
+        I can offer help
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="flex:1">
+
+  <!-- ============ METRICS ============ -->
+  <dl class="metrics" id="metrics">
+    <div class="metric" style="--accent:var(--crimson)">
+      <dt>Active SOS alerts</dt>
+      <dd><span class="num" id="m-sos">0</span><span class="sub" id="m-sos-sub">awaiting dispatch</span></dd>
+    </div>
+    <div class="metric" style="--accent:var(--emerald)">
+      <dt>Matched &amp; resolved</dt>
+      <dd><span class="num" id="m-resolved">0</span><span class="sub" id="m-resolved-sub">since 18:00</span></dd>
+    </div>
+    <div class="metric" style="--accent:var(--cyan)">
+      <dt>Volunteers on call</dt>
+      <dd><span class="num" id="m-vol">0</span><span class="sub" id="m-vol-sub">within 6 km</span></dd>
+    </div>
+    <div class="metric" style="--accent:var(--amber)">
+      <dt>Average response time</dt>
+      <dd><span class="num" id="m-time">12</span><span class="sub">min from post to contact</span></dd>
+    </div>
+  </dl>
+
+  <!-- ============ CONTROLS ============ -->
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Choose view">
+      <button id="view-map" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 7 9 4Z"/><path d="M9 4v13M15 7v12.5"/></svg>
+        Map
+      </button>
+      <button id="view-feed" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        Live feed
+      </button>
+    </div>
+
+    <div class="chipset" id="cat-filters" role="group" aria-label="Filter by category">
+      <span class="chipset-label">Need</span>
+    </div>
+
+    <div class="chipset" id="urg-filters" role="group" aria-label="Filter by urgency">
+      <span class="chipset-label">Urgency</span>
+    </div>
+
+    <div class="spacer"></div>
+    <span class="count-readout" id="count-readout">—</span>
+    <button class="btn btn-sm btn-ghost" id="clear-filters">Clear filters</button>
+  </div>
+
+  <!-- ============ STAGE ============ -->
+  <div class="stage">
+    <section class="panel" aria-label="Incident map and feed">
+      <div class="panel-head">
+        <h2 id="stage-title">Incident map — Sector 7</h2>
+        <span class="hint" id="stage-hint">tap a pin for details</span>
+      </div>
+
+      <div class="mapwrap" id="mapwrap">
+        <div class="mapcanvas" id="mapcanvas">
+          <svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="water" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#0B2B3C"/><stop offset="1" stop-color="#0A1C2C"/>
+              </linearGradient>
+              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                <path d="M50 0H0V50" fill="none" stroke="#101A2B" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="1000" height="620" fill="#070C16"/>
+            <rect width="1000" height="620" fill="url(#grid)"/>
+            <!-- parks -->
+            <path d="M60 400 L210 386 L238 500 L96 528 Z" fill="#0C2118" stroke="#12331F" stroke-width="1.5"/>
+            <path d="M700 60 L860 44 L884 150 L722 172 Z" fill="#0C2118" stroke="#12331F" stroke-width="1.5"/>
+            <!-- river -->
+            <path d="M-20 168 C 150 210, 300 120, 430 190 S 700 320, 1020 250 L1020 322 C 700 392, 560 268, 430 262 S 150 282, -20 240 Z" fill="url(#water)"/>
+            <path d="M-20 168 C 150 210, 300 120, 430 190 S 700 320, 1020 250" fill="none" stroke="#1B5A72" stroke-width="1.6" opacity=".7"/>
+            <!-- blocks -->
+            <g fill="#0C1526" stroke="#141F35" stroke-width="1.4">
+              <rect x="70" y="52" width="150" height="86" rx="4"/><rect x="246" y="40" width="118" height="98" rx="4"/>
+              <rect x="392" y="56" width="132" height="76" rx="4"/><rect x="556" y="44" width="106" height="92" rx="4"/>
+              <rect x="86" y="292" width="126" height="74" rx="4"/><rect x="262" y="306" width="150" height="82" rx="4"/>
+              <rect x="452" y="326" width="128" height="88" rx="4"/><rect x="620" y="352" width="146" height="76" rx="4"/>
+              <rect x="800" y="330" width="136" height="96" rx="4"/><rect x="266" y="440" width="128" height="86" rx="4"/>
+              <rect x="430" y="460" width="160" height="92" rx="4"/><rect x="630" y="470" width="120" height="82" rx="4"/>
+              <rect x="792" y="480" width="150" height="80" rx="4"/><rect x="700" y="200" width="120" height="60" rx="4"/>
+              <rect x="850" y="190" width="104" height="72" rx="4"/>
+            </g>
+            <!-- roads -->
+            <g stroke="#1A2740" stroke-width="7" stroke-linecap="round" fill="none">
+              <path d="M0 154 H1000"/><path d="M0 284 H1000"/><path d="M0 442 H1000"/><path d="M0 572 H1000"/>
+              <path d="M232 0 V620"/><path d="M430 0 V620"/><path d="M600 0 V620"/><path d="M782 0 V620"/>
+            </g>
+            <g stroke="#243456" stroke-width="1.2" stroke-dasharray="9 11" fill="none">
+              <path d="M0 154 H1000"/><path d="M0 442 H1000"/><path d="M430 0 V620"/>
+            </g>
+            <!-- bridge -->
+            <g stroke="#3A4C74" stroke-width="3">
+              <path d="M406 176 V266"/><path d="M454 176 V266"/>
+            </g>
+            <text x="440" y="170" fill="#4C5F87" font-size="11" font-family="IBM Plex Mono, monospace">Mill Bridge</text>
+            <text x="20" y="146" fill="#3E4F74" font-size="11" font-family="IBM Plex Mono, monospace">OAK ST</text>
+            <text x="20" y="434" fill="#3E4F74" font-size="11" font-family="IBM Plex Mono, monospace">CEDAR AVE</text>
+            <text x="612" y="30" fill="#3E4F74" font-size="11" font-family="IBM Plex Mono, monospace">HARBOR RD</text>
+            <text x="120" y="472" fill="#2E5B40" font-size="11" font-family="IBM Plex Mono, monospace">Fairview Park</text>
+            <text x="742" y="112" fill="#2E5B40" font-size="11" font-family="IBM Plex Mono, monospace">Hillcrest Green</text>
+            <text x="150" y="228" fill="#2C6379" font-size="12" font-family="IBM Plex Mono, monospace">SAGE RIVER</text>
+          </svg>
+          <div id="pinlayer"></div>
+        </div>
+
+        <div class="map-tools">
+          <button id="zoom-in" title="Zoom in" aria-label="Zoom in"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></button>
+          <button id="zoom-out" title="Zoom out" aria-label="Zoom out"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg></button>
+          <button id="recenter" title="Recenter" aria-label="Recenter"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+        </div>
+
+        <div class="legend">
+          <div><i style="background:#FF4557"></i> Urgent SOS request</div>
+          <div><i style="background:#10D18B"></i> Volunteer aid offer</div>
+          <div><i style="background:#F7B23B"></i> Community hazard</div>
+        </div>
+        <div class="map-scale">500 m</div>
+      </div>
+
+      <div class="feed" id="feed" hidden></div>
+    </section>
+
+    <!-- ============ RAIL ============ -->
+    <aside class="rail">
+      <div class="triage-cta">
+        <h2>Bedrock Incident Triage</h2>
+        <p>Type or speak what is happening in plain language. The model scores urgency, sorts the need into categories, writes a dispatch summary, and pulls the nearest volunteers who can actually cover it.</p>
+        <button class="btn btn-ai" data-open="triage" style="justify-content:center">Start triage</button>
+        <div class="model-line"><i></i><span id="model-status">anthropic.claude · us-east-1 · checking link…</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Dispatch log</h2><span class="hint" id="log-count">0 events</span></div>
+        <ul class="log" id="log" style="list-style:none;margin:0"></ul>
+      </div>
+
+      <div class="panel arch-panel">
+        <div class="panel-head"><h2>Deployment wiring</h2></div>
+        <div class="arch">
+          <details>
+            <summary>How this console maps to AWS</summary>
+            <dl>
+              <dt>Bedrock · InvokeModel</dt>
+              <dd>Triage calls go through <code>api.triage()</code>, which posts free text and returns structured JSON: urgency score, categories, summary, suggested matches.</dd>
+              <dt>DynamoDB · reliefpulse-incidents</dt>
+              <dd>Single-table design. <code>PK: INCIDENT#id</code> / <code>SK: METADATA</code>, with <code>VOLUNTEER#id</code> and <code>HAZARD#id</code> partitions and a GSI on status + urgency.</dd>
+              <dt>S3 · reliefpulse-evidence</dt>
+              <dd>Damage photos upload straight from the browser with a presigned PUT; the object key is written back onto the incident item.</dd>
+              <dt>Lambda + API Gateway</dt>
+              <dd><code>fetchIncidents</code>, <code>createSOS</code>, <code>createOffer</code>, <code>matchVolunteer</code>, <code>resolveIncident</code> — each a handler behind one HTTP route.</dd>
+            </dl>
+          </details>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span>ReliefPulse operates alongside, not instead of, emergency services.</span>
+    <span class="dot-sep">·</span>
+    <span>Life-threatening emergencies still go to 911 first.</span>
+    <span class="dot-sep">·</span>
+    <span id="clock">—</span>
+  </footer>
+</main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<div id="modal-root"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   1. DOMAIN CONSTANTS
+   ============================================================ */
+const CATEGORIES = {
+  medical:   {label:"Medical",             icon:"✚", color:"#FF4557"},
+  food:      {label:"Food / Water",        icon:"🍲", color:"#F7B23B"},
+  transport: {label:"Evacuation / Transport", icon:"🚐", color:"#31DDF0"},
+  shelter:   {label:"Shelter",             icon:"🏠", color:"#A78BFA"},
+  power:     {label:"Power / Tools",       icon:"⚡", color:"#F7B23B"},
+  pets:      {label:"Pet Care",            icon:"🐾", color:"#10D18B"}
+};
+const URGENCIES = {
+  critical:{label:"Critical", min:8},
+  high:    {label:"High",     min:5},
+  moderate:{label:"Moderate", min:1}
+};
+const scoreToUrgency = s => s >= 8 ? "critical" : s >= 5 ? "high" : "moderate";
+
+/* ============================================================
+   2. PERSISTENCE — DynamoDB single-table simulation
+   PK: INCIDENT#<id> | VOLUNTEER#<id> | HAZARD#<id>   SK: METADATA
+   Swap `driver` for a real DocumentClient and nothing above changes.
+   ============================================================ */
+const Dynamo = (() => {
+  const TABLE = "reliefpulse-incidents";
+  const STORAGE_KEY = "reliefpulse.table.v1";
+  let items = new Map();          // "PK|SK" -> item
+
+  function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...items.values()]));
+    }catch(_){ /* storage unavailable or full — the session still works in memory */ }
+  }
+  function hydrate(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      const arr = JSON.parse(raw);
+      if(!Array.isArray(arr) || !arr.length) return false;
+      arr.forEach(it => items.set(it.PK + "|" + it.SK, it));
+      return true;
+    }catch(_){ return false; }
+  }
+  return {
+    TABLE,
+    hydrate,
+    put(item){ items.set(item.PK + "|" + item.SK, item); persist(); return item; },
+    update(pk, patch){
+      const key = pk + "|METADATA", cur = items.get(key);
+      if(!cur) return null;
+      const next = Object.assign({}, cur, patch, {updatedAt:Date.now()});
+      items.set(key, next); persist(); return next;
+    },
+    query(prefix){
+      return [...items.values()].filter(i => i.PK.startsWith(prefix));
+    },
+    get(pk){ return items.get(pk + "|METADATA") || null; },
+    reset(){ items = new Map(); try{ localStorage.removeItem(STORAGE_KEY); }catch(_){} }
+  };
+})();
+
+/* ============================================================
+   3. S3 — presigned upload simulation
+   ============================================================ */
+const S3 = {
+  BUCKET:"reliefpulse-evidence",
+  key(file){
+    const d = new Date();
+    const stamp = d.toISOString().slice(0,10).replace(/-/g,"/");
+    const safe = (file.name || "photo.jpg").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-42);
+    return `s3://${S3.BUCKET}/${stamp}/${Math.random().toString(36).slice(2,10)}-${safe}`;
+  },
+  upload(file, onProgress){
+    return new Promise((resolve, reject) => {
+      if(!file.type.startsWith("image/")){ reject(new Error("Only image files can be attached.")); return; }
+      if(file.size > 8 * 1024 * 1024){ reject(new Error("That image is over 8 MB. Attach a smaller one.")); return; }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("The file could not be read. Try a different photo."));
+      reader.onload = () => {
+        let pct = 0;
+        const tick = setInterval(() => {
+          pct = Math.min(100, pct + 14 + Math.random()*20);
+          onProgress && onProgress(pct);
+          if(pct >= 100){
+            clearInterval(tick);
+            resolve({key:S3.key(file), url:reader.result, bytes:file.size});
+          }
+        }, 110);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
+/* ============================================================
+   4. BEDROCK TRIAGE
+   Live path: the page asks Claude and parses structured JSON.
+   Fallback: a deterministic on-device classifier, so triage
+   still works with no model link and no network.
+   ============================================================ */
+const Bedrock = (() => {
+  let sampler = null, linked = false, checked = false;
+
+  const KEYWORDS = {
+    medical:   ["insulin","medicine","medication","injur","bleed","blood","oxygen","dialysis","asthma","inhaler","chest pain","breath","unconscious","fever","diabet","wound","pregnan","seizure","doctor","nurse","heart","allerg","prescription"],
+    food:      ["food","hungry","water","meal","formula","baby food","drink","thirsty","groceries","hot meal","bottle","eat"],
+    transport: ["trapped","stranded","stuck","evacuat","rescue","boat","car","ride","truck","4x4","transport","lift","road","drive","carry","bridge","rising water","flood"],
+    shelter:   ["shelter","cold","freezing","heat","warm","house","roof","stay","bed","sleep","home","housing","blanket"],
+    power:     ["power","electric","generator","outage","battery","charge","light","fuel","chainsaw","pump","tool","tree down","phone dying","dark"],
+    pets:      ["dog","cat","pet","puppy","kitten","animal","livestock","horse","chicken","leash","kennel"]
+  };
+  const ESCALATORS = [
+    {re:/trapped|can'?t get out|stuck on|rising fast|drowning|underwater/i, w:3.2, why:"person is confined by the water"},
+    {re:/elderly|senior|grandm|grandf|82|80-year|wheelchair|bedridden|disabled/i, w:2.0, why:"reduced-mobility occupant"},
+    {re:/baby|infant|newborn|toddler|child|kids|children|pregnan/i, w:2.0, why:"small children on scene"},
+    {re:/insulin|oxygen|dialysis|heart|seizure|bleeding|unconscious|not breathing|chest pain/i, w:3.0, why:"time-critical medical need"},
+    {re:/no heat|freezing|hypotherm|below zero|no power.*(night|cold)/i, w:1.6, why:"cold exposure risk"},
+    {re:/fire|smoke|gas smell|live wire|power line|sparking/i, w:2.8, why:"active site hazard"},
+    {re:/2nd floor|second floor|attic|roof|upstairs/i, w:1.4, why:"occupant moved to a higher floor"},
+    {re:/alone|by myself|no one else/i, w:1.0, why:"no one else on site"}
+  ];
+
+  async function link(){
+    if(checked) return linked;
+    checked = true;
+    try{
+      if(window.claude && typeof window.claude.use === "function"){
+        sampler = await window.claude.use("sample");
+        linked = !!sampler;
+      }
+    }catch(_){ linked = false; }
+    return linked;
+  }
+
+  function local(text){
+    const t = (text || "").toLowerCase();
+    const cats = [];
+    for(const [key, words] of Object.entries(KEYWORDS)){
+      const hits = words.filter(w => t.includes(w)).length;
+      if(hits) cats.push({key, hits});
+    }
+    cats.sort((a,b) => b.hits - a.hits);
+    let categories = cats.slice(0,3).map(c => c.key);
+    if(!categories.length) categories = ["shelter"];
+
+    let score = 3.2 + Math.min(2.2, cats.length * 0.7);
+    const reasons = [];
+    ESCALATORS.forEach(e => { if(e.re.test(text||"")){ score += e.w; reasons.push(e.why); } });
+    if(categories.includes("medical")) score += 1.1;
+    score = Math.max(1, Math.min(10, Math.round(score)));
+
+    const first = CATEGORIES[categories[0]].label.toLowerCase();
+    const clean = (text||"").replace(/\s+/g," ").trim();
+    const head = clean.length > 118 ? clean.slice(0,115).replace(/[,.\s]+\S*$/,"") + "…" : clean;
+    const summary = head || "Request received with no detail.";
+    const rationale = reasons.length
+      ? "Scored up for " + reasons.slice(0,3).join(", ") + "."
+      : "No escalating factors detected in the text — routed as a standard " + first + " request.";
+
+    return {
+      urgencyScore: score,
+      categories,
+      summary,
+      rationale,
+      recommendedAction: score >= 8
+        ? "Dispatch the nearest capable volunteer now and notify the county EOC."
+        : score >= 5
+          ? "Assign a volunteer within the hour and check back for status."
+          : "Queue for the next neighbourhood sweep.",
+      engine:"local"
+    };
+  }
+
+  async function analyze(text, volunteers){
+    const ok = await link();
+    if(!ok) return local(text);
+
+    const roster = volunteers.map(v =>
+      `- ${v.id} | ${v.name} | covers: ${v.categories.join(",")} | resources: ${v.resources.join(", ")} | radius ${v.radiusKm}km`
+    ).join("\n");
+
+    const prompt =
+`You are the triage model for ReliefPulse, a neighbourhood emergency dispatch console during a flood and winter-storm event.
+
+Read the resident's message and return ONLY a JSON object, no prose and no code fences, shaped exactly like this:
+{
+  "urgencyScore": <integer 1-10, where 10 is immediate risk to life>,
+  "categories": [<1-3 of "medical","food","transport","shelter","power","pets">],
+  "summary": "<one dispatch-ready sentence under 22 words, written for a responder>",
+  "rationale": "<one short sentence naming the factors that set the score>",
+  "recommendedAction": "<one short imperative sentence for the dispatcher>",
+  "volunteerIds": [<ids from the roster below that genuinely fit, best first, up to 3>]
+}
+
+Scoring guide: 9-10 immediate danger to life (trapped by rising water, not breathing, no insulin for a diabetic). 6-8 serious but stable for a few hours. 3-5 real hardship, no danger. 1-2 convenience.
+
+Volunteer roster:
+${roster}
+
+Resident's message:
+"""${(text||"").slice(0,1400)}"""`;
+
+    const out = await sampler.json(prompt, {modelTier:"quick"});
+    const valid = k => Object.prototype.hasOwnProperty.call(CATEGORIES, k);
+    const cats = Array.isArray(out.categories) ? out.categories.filter(valid).slice(0,3) : [];
+    return {
+      urgencyScore: Math.max(1, Math.min(10, Math.round(Number(out.urgencyScore) || 5))),
+      categories: cats.length ? cats : local(text).categories,
+      summary: String(out.summary || "").slice(0,220) || local(text).summary,
+      rationale: String(out.rationale || "").slice(0,220),
+      recommendedAction: String(out.recommendedAction || "").slice(0,200),
+      volunteerIds: Array.isArray(out.volunteerIds) ? out.volunteerIds.slice(0,3) : [],
+      engine:"bedrock"
+    };
+  }
+
+  return {analyze, link, local};
+})();
+
+/* ============================================================
+   5. API CLIENT — one function per Lambda route
+   ============================================================ */
+const api = {
+  async fetchIncidents(){ return Dynamo.query("INCIDENT#"); },
+  async fetchVolunteers(){ return Dynamo.query("VOLUNTEER#"); },
+  async fetchHazards(){ return Dynamo.query("HAZARD#"); },
+
+  async createSOS(input){
+    const id = "inc_" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const item = {
+      PK:"INCIDENT#"+id, SK:"METADATA", entity:"incident", id,
+      name:input.name, phone:input.phone||"", location:input.location,
+      lat:input.lat, lng:input.lng,
+      categories:input.categories, urgency:input.urgency,
+      urgencyScore:input.urgencyScore ?? URGENCIES[input.urgency].min + 1,
+      summary:input.summary, detail:input.detail||"",
+      photoKey:input.photoKey||null, photoUrl:input.photoUrl||null,
+      status:"open", matchedVolunteerId:null,
+      createdAt:Date.now(), updatedAt:Date.now(), source:input.source||"form"
+    };
+    return Dynamo.put(item);
+  },
+
+  async createOffer(input){
+    const id = "vol_" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const item = {
+      PK:"VOLUNTEER#"+id, SK:"METADATA", entity:"volunteer", id,
+      name:input.name, contact:input.contact||"", location:input.location,
+      lat:input.lat, lng:input.lng,
+      resources:input.resources, categories:input.categories,
+      radiusKm:input.radiusKm, note:input.note||"",
+      status:"available", assignedTo:null, createdAt:Date.now(), updatedAt:Date.now()
+    };
+    return Dynamo.put(item);
+  },
+
+  async matchVolunteer(incidentId, volunteerId){
+    const inc = Dynamo.get("INCIDENT#"+incidentId);
+    if(!inc) return {error:"Incident not found."};
+    const pool = Dynamo.query("VOLUNTEER#").filter(v => v.status === "available");
+    if(!pool.length) return {error:"No volunteers are free right now."};
+    const best = volunteerId
+      ? pool.find(v => v.id === volunteerId) || rank(inc, pool)[0]
+      : rank(inc, pool)[0];
+    if(!best) return {error:"No volunteer covers that need inside their radius."};
+    const updated = Dynamo.update(inc.PK, {status:"matched", matchedVolunteerId:best.id, matchedAt:Date.now()});
+    Dynamo.update(best.PK, {status:"assigned", assignedTo:incidentId});
+    return {incident:updated, volunteer:best};
+  },
+
+  async resolveIncident(incidentId){
+    const inc = Dynamo.get("INCIDENT#"+incidentId);
+    if(!inc) return null;
+    if(inc.matchedVolunteerId){
+      const v = Dynamo.get("VOLUNTEER#"+inc.matchedVolunteerId);
+      if(v) Dynamo.update(v.PK, {status:"available", assignedTo:null});
+    }
+    return Dynamo.update(inc.PK, {status:"resolved", resolvedAt:Date.now()});
+  },
+
+  async triage(text){
+    const volunteers = Dynamo.query("VOLUNTEER#").filter(v => v.status === "available");
+    return Bedrock.analyze(text, volunteers);
+  }
+};
+
+/* distance on the map grid, ~60 m per unit */
+function distanceKm(a, b){
+  const dx = (a.lat - b.lat), dy = (a.lng - b.lng);
+  return Math.round(Math.sqrt(dx*dx + dy*dy) * 0.062 * 10) / 10;
+}
+function rank(incident, pool){
+  return pool.map(v => {
+    const km = distanceKm(incident, v);
+    const overlap = (incident.categories||[]).filter(c => v.categories.includes(c)).length;
+    const covers = km <= v.radiusKm;
+    const score = overlap * 42 + (covers ? 28 : 0) - km * 4;
+    return Object.assign({}, v, {_km:km, _overlap:overlap, _score:score, _covers:covers});
+  })
+  .filter(v => v._overlap > 0 || v._covers)
+  .sort((a,b) => b._score - a._score);
+}
+
+/* ============================================================
+   6. SEED DATA — 5 incidents, 4 volunteers, 3 hazards
+   ============================================================ */
+const mins = n => Date.now() - n*60000;
+function seed(){
+  const incidents = [
+    {id:"inc_oak212", name:"Priya Raghunathan", phone:"(555) 0142", location:"212 Oak St, 2nd floor",
+     lat:31, lng:22, categories:["medical","transport"], urgency:"critical", urgencyScore:9,
+     summary:"Two adults on the second floor as water reaches the stairs; mother needs refrigerated insulin.",
+     detail:"Ground floor flooded around 19:40. My mother is 78 and her insulin is in the downstairs fridge.",
+     status:"open", createdAt:mins(11), source:"triage"},
+    {id:"inc_cedar9", name:"Marcus Bell", phone:"(555) 0198", location:"9 Cedar Ave",
+     lat:22, lng:68, categories:["power","shelter"], urgency:"high", urgencyScore:7,
+     summary:"Oxygen concentrator running on a battery with about four hours of charge left.",
+     detail:"Power went out at 18:10. House is down to 11°C and the concentrator battery is draining.",
+     status:"open", createdAt:mins(26), source:"form"},
+    {id:"inc_harbor44", name:"Dana Okonkwo", phone:"(555) 0173", location:"44 Harbor Rd",
+     lat:74, lng:14, categories:["food","shelter"], urgency:"moderate", urgencyScore:4,
+     summary:"Family of five with no hot food since morning and a leaking roof over the back bedroom.",
+     detail:"We are dry and safe, just out of anything hot to eat and short on drinking water.",
+     status:"matched", matchedVolunteerId:"vol_kitchen", createdAt:mins(52), source:"form"},
+    {id:"inc_mill18", name:"Elena Fischer", phone:"(555) 0120", location:"18 Mill Lane",
+     lat:44, lng:77, categories:["transport","pets"], urgency:"high", urgencyScore:6,
+     summary:"Driveway cut off by water; two dogs and one cat need moving before the level rises again.",
+     detail:"I can walk out but I cannot carry three carriers through knee-deep water on my own.",
+     status:"open", createdAt:mins(38), source:"form"},
+    {id:"inc_ridge6", name:"Tomas Herrera", phone:"(555) 0165", location:"6 Ridgeway Ct",
+     lat:83, lng:56, categories:["medical","food"], urgency:"moderate", urgencyScore:5,
+     summary:"Post-surgery resident out of clean dressings and unable to reach the pharmacy.",
+     detail:"Knee replacement three weeks ago. Roads flooded between here and the pharmacy on Harbor.",
+     status:"resolved", createdAt:mins(96), resolvedAt:mins(71), source:"form"}
+  ];
+  incidents.forEach(i => Dynamo.put(Object.assign({
+    PK:"INCIDENT#"+i.id, SK:"METADATA", entity:"incident",
+    photoKey:null, photoUrl:null, matchedVolunteerId:i.matchedVolunteerId||null, updatedAt:i.createdAt
+  }, i)));
+
+  const volunteers = [
+    {id:"vol_boat", name:"Aiden Cross", contact:"(555) 0311", location:"Sage River boat ramp",
+     lat:52, lng:34, resources:["14ft jon boat","Tow strap","Two life vests"],
+     categories:["transport","pets"], radiusKm:5, note:"On the water until 02:00, can take three passengers per run.",
+     status:"available", createdAt:mins(64)},
+    {id:"vol_kitchen", name:"Nadia Haddad", contact:"(555) 0345", location:"Cedar Ave community kitchen",
+     lat:28, lng:60, resources:["60 hot meals","Drinking water pallets","Thermoses"],
+     categories:["food","shelter"], radiusKm:4, note:"Kitchen runs until midnight; deliveries by cargo bike.",
+     status:"assigned", assignedTo:"inc_harbor44", createdAt:mins(88)},
+    {id:"vol_genset", name:"Ray Whitfield", contact:"(555) 0327", location:"Old Mill yard",
+     lat:66, lng:72, resources:["7kW generator","Chainsaw","Fuel cans"],
+     categories:["power","transport"], radiusKm:7, note:"Has a 4x4 with a winch, can clear downed limbs.",
+     status:"available", createdAt:mins(41)},
+    {id:"vol_nurse", name:"Sofia Mendes", contact:"(555) 0358", location:"Hillcrest clinic annex",
+     lat:79, lng:26, resources:["Trauma kit","Insulin cold box","Wound care supplies"],
+     categories:["medical","shelter"], radiusKm:6, note:"Registered nurse, off shift until 06:00.",
+     status:"available", createdAt:mins(19)}
+  ];
+  volunteers.forEach(v => Dynamo.put(Object.assign({
+    PK:"VOLUNTEER#"+v.id, SK:"METADATA", entity:"volunteer", assignedTo:v.assignedTo||null, updatedAt:v.createdAt
+  }, v)));
+
+  const hazards = [
+    {id:"haz_line", title:"Downed power line", location:"Oak St at 4th",
+     lat:18, lng:40, detail:"Line across both lanes and still arcing. Utility crew notified at 19:05.", createdAt:mins(74)},
+    {id:"haz_bridge", title:"Mill Bridge underwater", location:"Mill Bridge crossing",
+     lat:43, lng:36, detail:"Deck submerged by roughly 40 cm. No vehicle should attempt the crossing.", createdAt:mins(58)},
+    {id:"haz_tree", title:"Tree blocking Cedar Ave", location:"Cedar Ave near Fairview Park",
+     lat:16, lng:76, detail:"Full-width oak down. Foot traffic can pass on the park side only.", createdAt:mins(33)}
+  ];
+  hazards.forEach(h => Dynamo.put(Object.assign({
+    PK:"HAZARD#"+h.id, SK:"METADATA", entity:"hazard", updatedAt:h.createdAt
+  }, h)));
+}
+
+/* ============================================================
+   7. VIEW STATE
+   ============================================================ */
+const state = {
+  view:"map",
+  cats:new Set(),
+  urgs:new Set(),
+  selected:null,
+  zoom:1,
+  log:[]
+};
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, cls, html) => { const n = document.createElement(tag); if(cls) n.className = cls; if(html != null) n.innerHTML = html; return n; };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function ago(ts){
+  const m = Math.max(0, Math.round((Date.now() - ts)/60000));
+  if(m < 1) return "just now";
+  if(m < 60) return m + " min ago";
+  const h = Math.floor(m/60);
+  return h + "h " + (m%60) + "m ago";
+}
+function hhmm(ts){ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}); }
+
+/* ============================================================
+   8. TOASTS
+   ============================================================ */
+const ICONS = {
+  sos:'<svg viewBox="0 0 24 24" fill="none" stroke="#FF6B7A" stroke-width="2" stroke-linecap="round"><path d="M12 9v4.5M12 17h.01"/><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+  match:'<svg viewBox="0 0 24 24" fill="none" stroke="#3BE7AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  hazard:'<svg viewBox="0 0 24 24" fill="none" stroke="#FFCE84" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="#7FE5F2" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
+};
+function toast(kind, title, body, ms){
+  const t = el("div","toast");
+  t.dataset.kind = kind;
+  t.innerHTML = (ICONS[kind] || ICONS.info) + `<div><strong>${esc(title)}</strong><p>${esc(body)}</p></div>`;
+  $("#toasts").appendChild(t);
+  setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 260); }, ms || 5200);
+}
+
+/* ============================================================
+   9. DISPATCH LOG
+   ============================================================ */
+function logEvent(sev, html){
+  state.log.unshift({sev, html, at:Date.now()});
+  state.log = state.log.slice(0,40);
+  renderLog();
+}
+function renderLog(){
+  const ul = $("#log");
+  ul.innerHTML = "";
+  if(!state.log.length){
+    ul.appendChild(el("li","", '<span></span><span class="ev">Console idle. Events appear here as reports come in.</span>'));
+  }
+  state.log.forEach(e => {
+    const li = el("li");
+    li.dataset.sev = e.sev;
+    li.innerHTML = `<time>${hhmm(e.at)}</time><span class="ev">${e.html}</span>`;
+    ul.appendChild(li);
+  });
+  $("#log-count").textContent = state.log.length + (state.log.length === 1 ? " event" : " events");
+}
+
+/* ============================================================
+   10. FILTERS
+   ============================================================ */
+function buildFilters(){
+  const cw = $("#cat-filters");
+  Object.entries(CATEGORIES).forEach(([key, c]) => {
+    const b = el("button","chip", `<span class="dot" style="background:${c.color}"></span>${c.label}`);
+    b.type = "button"; b.setAttribute("aria-pressed","false"); b.dataset.cat = key;
+    b.addEventListener("click", () => {
+      state.cats.has(key) ? state.cats.delete(key) : state.cats.add(key);
+      b.setAttribute("aria-pressed", String(state.cats.has(key)));
+      render();
+    });
+    cw.appendChild(b);
+  });
+  const uw = $("#urg-filters");
+  Object.entries(URGENCIES).forEach(([key, u]) => {
+    const b = el("button","chip u-"+key, u.label);
+    b.type = "button"; b.setAttribute("aria-pressed","false"); b.dataset.urg = key;
+    b.addEventListener("click", () => {
+      state.urgs.has(key) ? state.urgs.delete(key) : state.urgs.add(key);
+      b.setAttribute("aria-pressed", String(state.urgs.has(key)));
+      render();
+    });
+    uw.appendChild(b);
+  });
+  $("#clear-filters").addEventListener("click", () => {
+    state.cats.clear(); state.urgs.clear();
+    $$("#cat-filters .chip, #urg-filters .chip").forEach(c => c.setAttribute("aria-pressed","false"));
+    render();
+  });
+}
+function passes(item){
+  if(item.entity === "hazard") return state.cats.size === 0 && state.urgs.size === 0 ? true : false;
+  const catOk = state.cats.size === 0 || (item.categories||[]).some(c => state.cats.has(c));
+  const urgOk = state.urgs.size === 0 || (item.entity === "volunteer" ? false : state.urgs.has(item.urgency));
+  return catOk && urgOk;
+}
+
+/* ============================================================
+   11. RENDER — map + feed + metrics
+   ============================================================ */
+function render(){
+  const incidents  = Dynamo.query("INCIDENT#").sort((a,b) => b.createdAt - a.createdAt);
+  const volunteers = Dynamo.query("VOLUNTEER#").sort((a,b) => b.createdAt - a.createdAt);
+  const hazards    = Dynamo.query("HAZARD#").sort((a,b) => b.createdAt - a.createdAt);
+
+  const fInc = incidents.filter(passes);
+  const fVol = volunteers.filter(passes);
+  const fHaz = hazards.filter(passes);
+
+  renderMetrics(incidents, volunteers);
+  renderPins(fInc, fVol, fHaz);
+  renderFeed(fInc, fVol, fHaz);
+
+  $("#count-readout").textContent =
+    `${fInc.length} requests · ${fVol.length} offers · ${fHaz.length} hazards`;
+}
+
+function renderMetrics(incidents, volunteers){
+  const open = incidents.filter(i => i.status === "open");
+  const done = incidents.filter(i => i.status === "resolved" || i.status === "matched");
+  const free = volunteers.filter(v => v.status === "available");
+  const crit = open.filter(i => i.urgency === "critical").length;
+  animateNum($("#m-sos"), open.length);
+  animateNum($("#m-resolved"), done.length);
+  animateNum($("#m-vol"), free.length);
+  $("#m-sos-sub").textContent = crit ? `${crit} critical` : "awaiting dispatch";
+  $("#m-resolved-sub").textContent = `${incidents.filter(i=>i.status==="resolved").length} closed out`;
+  $("#m-vol-sub").textContent = `${volunteers.length - free.length} on a job`;
+  const base = 12 + Math.max(0, open.length - 3) * 1.4 - free.length * 0.4;
+  $("#m-time").textContent = Math.max(6, Math.round(base));
+}
+function animateNum(node, target){
+  const from = parseInt(node.textContent, 10) || 0;
+  if(from === target){ node.textContent = target; return; }
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){ node.textContent = target; return; }
+  const steps = Math.min(8, Math.abs(target - from));
+  let i = 0;
+  const id = setInterval(() => {
+    i++;
+    node.textContent = Math.round(from + (target - from) * (i/steps));
+    if(i >= steps){ clearInterval(id); node.textContent = target; }
+  }, 42);
+}
+
+function renderPins(incidents, volunteers, hazards){
+  const layer = $("#pinlayer");
+  layer.innerHTML = "";
+  const place = (item, kind, glyph) => {
+    if(kind === "sos" && item.urgency === "critical" && item.status === "open"){
+      const p = el("div","pulse");
+      p.style.left = item.lat + "%"; p.style.top = item.lng + "%";
+      layer.appendChild(p);
+    }
+    const pin = el("button","pin", `<span>${glyph}</span>`);
+    pin.type = "button";
+    pin.dataset.kind = kind;
+    pin.dataset.id = item.id;
+    pin.dataset.state = item.status || "open";
+    pin.style.left = item.lat + "%";
+    pin.style.top  = item.lng + "%";
+    pin.setAttribute("aria-label", (item.name || item.title) + " — " + (item.location||""));
+    if(state.selected === item.id) pin.classList.add("pin-selected");
+    pin.addEventListener("click", ev => { ev.stopPropagation(); openCallout(item, kind, pin); });
+    layer.appendChild(pin);
+  };
+  incidents.forEach(i => place(i, "sos", i.status === "resolved" ? "✓" : (CATEGORIES[i.categories[0]]||{}).icon || "!"));
+  volunteers.forEach(v => place(v, "offer", "✋"));
+  hazards.forEach(h => place(h, "hazard", "⚠"));
+}
+
+function openCallout(item, kind, pin){
+  closeCallout();
+  state.selected = item.id;
+  const c = el("div","callout");
+  c.style.left = item.lat + "%";
+  c.style.top  = item.lng + "%";
+  const title = esc(item.title || item.name);
+  let body = "";
+  if(kind === "sos"){
+    body = `<span class="tag tag-${item.urgency}">${URGENCIES[item.urgency].label} · ${item.urgencyScore}/10</span>
+      <h4 style="margin-top:7px">${title}</h4>
+      <p>${esc(item.summary)}</p>
+      <div class="meta" style="margin-bottom:9px">${esc(item.location)} · ${ago(item.createdAt)}</div>`;
+    if(item.status === "open"){
+      body += `<button class="btn btn-aid btn-sm" data-act="match" data-id="${item.id}">Dispatch nearest volunteer</button>`;
+    }else if(item.status === "matched"){
+      const v = Dynamo.get("VOLUNTEER#"+item.matchedVolunteerId);
+      body += `<div class="matched-note">${ICONS.match}<span>${esc(v ? v.name : "A volunteer")} is en route.</span></div>`;
+    }else{
+      body += `<div class="meta">Closed ${ago(item.resolvedAt || item.updatedAt)}</div>`;
+    }
+  }else if(kind === "offer"){
+    body = `<span class="tag tag-offer">${item.status === "available" ? "Available now" : "On a job"}</span>
+      <h4 style="margin-top:7px">${title}</h4>
+      <p>${esc(item.resources.join(" · "))}</p>
+      <div class="meta">${esc(item.location)} · covers ${item.radiusKm} km</div>`;
+  }else{
+    body = `<span class="tag tag-hazard">Hazard</span>
+      <h4 style="margin-top:7px">${title}</h4>
+      <p>${esc(item.detail)}</p>
+      <div class="meta">${esc(item.location)} · reported ${ago(item.createdAt)}</div>`;
+  }
+  c.innerHTML = body + `<button class="callout-x" aria-label="Close">×</button>`;
+  c.querySelector(".callout-x").addEventListener("click", ev => { ev.stopPropagation(); closeCallout(); });
+  const m = c.querySelector('[data-act="match"]');
+  if(m) m.addEventListener("click", ev => { ev.stopPropagation(); doMatch(item.id); });
+  c.addEventListener("click", ev => ev.stopPropagation());
+  $("#mapcanvas").appendChild(c);
+  pin.classList.add("pin-selected");
+}
+function closeCallout(){
+  const c = $("#mapcanvas .callout");
+  if(c) c.remove();
+  $$(".pin-selected").forEach(p => p.classList.remove("pin-selected"));
+  state.selected = null;
+}
+
+function renderFeed(incidents, volunteers, hazards){
+  const feed = $("#feed");
+  feed.innerHTML = "";
+  const all = [
+    ...incidents.map(i => ({t:"sos", d:i})),
+    ...hazards.map(h => ({t:"hazard", d:h})),
+    ...volunteers.map(v => ({t:"offer", d:v}))
+  ].sort((a,b) => {
+    const w = x => x.t === "sos" ? (x.d.status === "open" ? 0 : 2) : x.t === "hazard" ? 1 : 3;
+    return w(a) - w(b) || b.d.createdAt - a.d.createdAt;
+  });
+
+  if(!all.length){
+    feed.appendChild(el("div","empty",
+      "<h3>Nothing matches those filters</h3><p>Clear a filter to see the rest of the board.</p>"));
+    return;
+  }
+  all.forEach(({t, d}) => feed.appendChild(t === "sos" ? sosCard(d) : t === "offer" ? offerCard(d) : hazardCard(d)));
+}
+
+function sosCard(i){
+  const card = el("article","card");
+  card.dataset.kind = "sos"; card.dataset.urgency = i.urgency; card.dataset.state = i.status;
+  const needs = (i.categories||[]).map(c => `<span class="need">${CATEGORIES[c].icon} ${CATEGORIES[c].label}</span>`).join("");
+  let extra = "";
+  if(i.status === "matched"){
+    const v = Dynamo.get("VOLUNTEER#"+i.matchedVolunteerId);
+    extra = `<div class="matched-note">${ICONS.match}<span><b>${esc(v ? v.name : "Volunteer")}</b> accepted — ${esc(v ? v.resources[0] : "en route")}. ETA under 20 min.</span></div>`;
+  }
+  const photo = i.photoUrl ? `<img class="evidence" src="${i.photoUrl}" alt="Photo attached to the request">` : "";
+  card.innerHTML = `
+    <div class="card-top">
+      <div style="flex:1;min-width:0">
+        <h3>${esc(i.summary)}</h3>
+        <div class="who">${esc(i.name)} · ${esc(i.location)}</div>
+      </div>
+      <span class="tag tag-${i.urgency}">${URGENCIES[i.urgency].label} ${i.urgencyScore}/10</span>
+    </div>
+    ${i.detail ? `<p class="body">${esc(i.detail)}</p>` : ""}
+    ${photo}
+    <div class="needs">${needs}</div>
+    ${extra}
+    <div class="meta"><span>${ago(i.createdAt)}</span><span>${i.phone ? esc(i.phone) : "no callback number"}</span>${i.photoKey ? `<span title="${esc(i.photoKey)}">photo on S3</span>` : ""}</div>
+    <div class="card-actions"></div>`;
+  const actions = card.querySelector(".card-actions");
+  if(i.status === "open"){
+    const b = el("button","btn btn-aid btn-sm","Dispatch nearest volunteer");
+    b.addEventListener("click", () => doMatch(i.id));
+    actions.appendChild(b);
+  }
+  if(i.status !== "resolved"){
+    const r = el("button","btn btn-sm btn-ghost","Mark resolved");
+    r.addEventListener("click", () => doResolve(i.id));
+    actions.appendChild(r);
+  }
+  return card;
+}
+
+function offerCard(v){
+  const card = el("article","card");
+  card.dataset.kind = "offer";
+  card.innerHTML = `
+    <div class="card-top">
+      <div style="flex:1;min-width:0">
+        <h3>${esc(v.name)}</h3>
+        <div class="who">${esc(v.location)} · covers ${v.radiusKm} km</div>
+      </div>
+      <span class="tag tag-offer">${v.status === "available" ? "Available" : "On a job"}</span>
+    </div>
+    ${v.note ? `<p class="body">${esc(v.note)}</p>` : ""}
+    <div class="needs">${v.resources.map(r => `<span class="need">${esc(r)}</span>`).join("")}</div>
+    <div class="meta"><span>${esc(v.contact || "contact withheld")}</span><span>listed ${ago(v.createdAt)}</span></div>`;
+  return card;
+}
+
+function hazardCard(h){
+  const card = el("article","card");
+  card.dataset.kind = "hazard"; card.dataset.urgency = "high";
+  card.innerHTML = `
+    <div class="card-top">
+      <div style="flex:1;min-width:0">
+        <h3>${esc(h.title)}</h3>
+        <div class="who">${esc(h.location)}</div>
+      </div>
+      <span class="tag tag-hazard">Hazard</span>
+    </div>
+    <p class="body">${esc(h.detail)}</p>
+    <div class="meta"><span>reported ${ago(h.createdAt)}</span></div>`;
+  return card;
+}
+
+/* ============================================================
+   12. ACTIONS
+   ============================================================ */
+async function doMatch(incidentId, volunteerId){
+  const res = await api.matchVolunteer(incidentId, volunteerId);
+  if(res.error){ toast("hazard","No match available", res.error); return; }
+  const {incident, volunteer} = res;
+  toast("match","Volunteer dispatched", `${volunteer.name} is taking ${incident.name} at ${incident.location}.`);
+  logEvent("match", `<b>${esc(volunteer.name)}</b> assigned to ${esc(incident.location)} — ${esc(volunteer.resources[0])}.`);
+  closeCallout();
+  render();
+}
+async function doResolve(incidentId){
+  const inc = await api.resolveIncident(incidentId);
+  if(!inc) return;
+  toast("info","Incident closed", `${inc.location} marked resolved. Any assigned volunteer is back on the board.`);
+  logEvent("info", `Closed <b>${esc(inc.location)}</b> after ${Math.round((Date.now()-inc.createdAt)/60000)} min.`);
+  closeCallout();
+  render();
+}
+
+/* ============================================================
+   13. MODALS
+   ============================================================ */
+let lastFocus = null;
+function openModal(node){
+  closeModal();
+  lastFocus = document.activeElement;
+  const scrim = el("div","scrim");
+  scrim.appendChild(node);
+  scrim.addEventListener("mousedown", e => { if(e.target === scrim) closeModal(); });
+  $("#modal-root").appendChild(scrim);
+  document.body.style.overflow = "hidden";
+  const first = node.querySelector("input,textarea,select,button");
+  if(first) setTimeout(() => first.focus(), 60);
+  node.addEventListener("keydown", e => {
+    if(e.key !== "Tab") return;
+    const f = [...node.querySelectorAll('button,input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent !== null);
+    if(!f.length) return;
+    const first = f[0], last = f[f.length-1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+}
+function closeModal(){
+  const s = $("#modal-root .scrim");
+  if(s) s.remove();
+  document.body.style.overflow = "";
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+  lastFocus = null;
+}
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape"){ if($("#modal-root .scrim")) closeModal(); else closeCallout(); }
+});
+
+function modalShell(title, subtitle, wide){
+  const m = el("div","modal" + (wide ? " wide" : ""));
+  m.setAttribute("role","dialog");
+  m.setAttribute("aria-modal","true");
+  m.setAttribute("aria-label", title);
+  m.innerHTML = `<div class="modal-head">
+      <div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div>
+      <button class="modal-x" aria-label="Close">×</button>
+    </div><div class="modal-body"></div>`;
+  m.querySelector(".modal-x").addEventListener("click", closeModal);
+  return m;
+}
+function checkboxGrid(name, entries){
+  return `<div class="checkgrid">` + entries.map(([v, label]) =>
+    `<label class="check"><input type="checkbox" name="${name}" value="${v}"><span>${label}</span></label>`).join("") + `</div>`;
+}
+
+/* ---------- SOS modal ---------- */
+function sosModal(prefill){
+  const m = modalShell("Request help", "Goes to every volunteer inside your area. For a life-threatening emergency, call 911 first.");
+  const body = m.querySelector(".modal-body");
+  body.innerHTML = `
+    <div class="grid-2">
+      <div class="field"><label for="s-name">Your name <span class="req">*</span></label><input id="s-name" type="text" placeholder="Priya R." autocomplete="name"></div>
+      <div class="field"><label for="s-phone">Callback number</label><input id="s-phone" type="tel" placeholder="(555) 0100" autocomplete="tel"></div>
+    </div>
+    <div class="field">
+      <label for="s-loc">Where you are <span class="req">*</span></label>
+      <div class="locpick">
+        <input id="s-loc" type="text" placeholder="212 Oak St, 2nd floor" style="flex:1">
+        <button class="btn btn-sm" type="button" id="s-gps">Drop GPS pin</button>
+      </div>
+      <span class="help">Pinned at <span class="coord" id="s-coord">—</span></span>
+    </div>
+    <div class="field"><label>What you need <span class="req">*</span></label>
+      ${checkboxGrid("s-cat", Object.entries(CATEGORIES).map(([k,c]) => [k, c.icon + " " + c.label]))}
+    </div>
+    <div class="field"><label>How urgent</label>
+      <div class="radio-row">
+        <label class="radio-pill u-critical"><input type="radio" name="s-urg" value="critical">Critical — danger now</label>
+        <label class="radio-pill u-high"><input type="radio" name="s-urg" value="high" checked>High — within the hour</label>
+        <label class="radio-pill u-moderate"><input type="radio" name="s-urg" value="moderate">Moderate — today</label>
+      </div>
+    </div>
+    <div class="field"><label for="s-detail">Anything a responder should know</label>
+      <textarea id="s-detail" placeholder="Water is up to the third stair. My mother is 78 and uses a walker."></textarea>
+    </div>
+    <div class="field"><label>Photo of the situation</label>
+      <div class="drop" id="s-drop" tabindex="0" role="button" aria-label="Attach a photo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <p>Drop a photo here or tap to choose</p>
+        <small>Uploads to s3://reliefpulse-evidence · JPG or PNG up to 8 MB</small>
+      </div>
+      <input type="file" id="s-file" accept="image/*" class="vh">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" id="s-cancel">Cancel</button>
+      <button class="btn btn-sos" type="button" id="s-submit">Post SOS</button>
+    </div>`;
+
+  let coords = {lat:30 + Math.random()*40, lng:28 + Math.random()*40};
+  let photo = null;
+  const setCoord = () => body.querySelector("#s-coord").textContent =
+    `41.${String(Math.round(coords.lat*137)).padStart(4,"0")}N, 74.${String(Math.round(coords.lng*137)).padStart(4,"0")}W`;
+  setCoord();
+  body.querySelector("#s-gps").addEventListener("click", () => {
+    coords = {lat:18 + Math.random()*66, lng:18 + Math.random()*62};
+    setCoord();
+    toast("info","Location pinned","Using your device position. Drag the pin on the map if it lands off.");
+  });
+
+  wireDrop(body.querySelector("#s-drop"), body.querySelector("#s-file"), r => { photo = r; });
+
+  if(prefill){
+    body.querySelector("#s-detail").value = prefill.detail || "";
+    if(prefill.categories) prefill.categories.forEach(c => {
+      const box = body.querySelector(`input[name="s-cat"][value="${c}"]`);
+      if(box) box.checked = true;
+    });
+    if(prefill.urgency){
+      const r = body.querySelector(`input[name="s-urg"][value="${prefill.urgency}"]`);
+      if(r) r.checked = true;
+    }
+  }
+
+  body.querySelector("#s-cancel").addEventListener("click", closeModal);
+  body.querySelector("#s-submit").addEventListener("click", async () => {
+    const name = body.querySelector("#s-name").value.trim();
+    const loc  = body.querySelector("#s-loc").value.trim();
+    const cats = [...body.querySelectorAll('input[name="s-cat"]:checked')].map(c => c.value);
+    if(!name || !loc || !cats.length){
+      toast("hazard","Three things are missing","Add your name, where you are, and at least one need before posting.");
+      return;
+    }
+    const urgency = body.querySelector('input[name="s-urg"]:checked').value;
+    const detail  = body.querySelector("#s-detail").value.trim();
+    const inc = await api.createSOS({
+      name, phone:body.querySelector("#s-phone").value.trim(), location:loc,
+      lat:coords.lat, lng:coords.lng, categories:cats, urgency,
+      urgencyScore: urgency === "critical" ? 9 : urgency === "high" ? 6 : 4,
+      summary: detail ? detail.split(/[.!?]/)[0].slice(0,110) : `${CATEGORIES[cats[0]].label} needed at ${loc}`,
+      detail, photoKey:photo && photo.key, photoUrl:photo && photo.url
+    });
+    closeModal();
+    render();
+    toast("sos","SOS posted", `${inc.location} is on the board. Volunteers within ${urgency === "critical" ? 8 : 5} km were paged.`);
+    logEvent("sos", `New <b>${URGENCIES[urgency].label.toLowerCase()}</b> request at ${esc(loc)} — ${cats.map(c=>CATEGORIES[c].label).join(", ")}.`);
+    setTimeout(() => autoSuggest(inc), 1400);
+  });
+  return m;
+}
+
+function wireDrop(drop, input, onDone){
+  const choose = () => input.click();
+  drop.addEventListener("click", choose);
+  drop.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); choose(); } });
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => { if(e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]); });
+  input.addEventListener("change", () => { if(input.files[0]) handle(input.files[0]); });
+
+  async function handle(file){
+    drop.innerHTML = `<div class="drop-preview"><div class="spin"></div><div><p style="margin:0">Uploading ${esc(file.name)}</p><div class="uploadbar"><i id="bar"></i></div></div></div>`;
+    try{
+      const res = await S3.upload(file, pct => {
+        const bar = drop.querySelector("#bar");
+        if(bar) bar.style.width = pct + "%";
+      });
+      drop.innerHTML = `<div class="drop-preview">
+        <img src="${res.url}" alt="Preview of the attached photo">
+        <div style="min-width:0">
+          <p style="margin:0 0 3px">Uploaded · ${(res.bytes/1024).toFixed(0)} KB</p>
+          <div class="s3key">${esc(res.key)}</div>
+        </div></div>`;
+      onDone(res);
+    }catch(err){
+      drop.innerHTML = `<p style="margin:0;color:#FF98A4">${esc(err.message)}</p><small>Tap to pick another file.</small>`;
+      onDone(null);
+    }
+  }
+}
+
+/* ---------- Offer aid modal ---------- */
+function offerModal(){
+  const m = modalShell("Offer help", "Your listing shows on the map so dispatchers can send you the closest matching request.");
+  const body = m.querySelector(".modal-body");
+  const RESOURCES = [
+    ["4x4 truck","transport"],["Boat","transport"],["Generator","power"],["Chainsaw / tools","power"],
+    ["First aid / medical training","medical"],["Hot meals","food"],["Drinking water","food"],
+    ["Shelter beds","shelter"],["Space heater","shelter"],["Pet crates / fostering","pets"],
+    ["Welfare checks on foot","shelter"],["Phone charging station","power"]
+  ];
+  body.innerHTML = `
+    <div class="grid-2">
+      <div class="field"><label for="o-name">Your name <span class="req">*</span></label><input id="o-name" type="text" placeholder="Ray W." autocomplete="name"></div>
+      <div class="field"><label for="o-contact">How to reach you <span class="req">*</span></label><input id="o-contact" type="text" placeholder="(555) 0100 or @handle"></div>
+    </div>
+    <div class="field">
+      <label for="o-loc">Where you are starting from <span class="req">*</span></label>
+      <div class="locpick"><input id="o-loc" type="text" placeholder="Old Mill yard" style="flex:1">
+      <button class="btn btn-sm" type="button" id="o-gps">Drop GPS pin</button></div>
+      <span class="help">Pinned at <span class="coord" id="o-coord">—</span></span>
+    </div>
+    <div class="field"><label>What you can bring <span class="req">*</span></label>
+      ${checkboxGrid("o-res", RESOURCES.map(([label, cat]) => [cat + "|" + label, label]))}
+    </div>
+    <div class="field"><label for="o-radius">How far you can travel</label>
+      <div class="range-row">
+        <input id="o-radius" type="range" min="1" max="15" value="6" step="1">
+        <output id="o-radius-out">6 km</output>
+      </div>
+    </div>
+    <div class="field"><label for="o-note">Anything else</label>
+      <textarea id="o-note" style="min-height:76px" placeholder="Available until 02:00. Truck has a winch."></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" id="o-cancel">Cancel</button>
+      <button class="btn btn-aid" type="button" id="o-submit">Post my offer</button>
+    </div>`;
+
+  let coords = {lat:30 + Math.random()*40, lng:30 + Math.random()*36};
+  const setCoord = () => body.querySelector("#o-coord").textContent =
+    `41.${String(Math.round(coords.lat*137)).padStart(4,"0")}N, 74.${String(Math.round(coords.lng*137)).padStart(4,"0")}W`;
+  setCoord();
+  body.querySelector("#o-gps").addEventListener("click", () => {
+    coords = {lat:18 + Math.random()*66, lng:18 + Math.random()*62}; setCoord();
+  });
+  const range = body.querySelector("#o-radius"), out = body.querySelector("#o-radius-out");
+  range.addEventListener("input", () => out.textContent = range.value + " km");
+
+  body.querySelector("#o-cancel").addEventListener("click", closeModal);
+  body.querySelector("#o-submit").addEventListener("click", async () => {
+    const name = body.querySelector("#o-name").value.trim();
+    const contact = body.querySelector("#o-contact").value.trim();
+    const loc = body.querySelector("#o-loc").value.trim();
+    const picked = [...body.querySelectorAll('input[name="o-res"]:checked')].map(c => c.value);
+    if(!name || !contact || !loc || !picked.length){
+      toast("hazard","Listing incomplete","Add your name, a contact, where you start from, and at least one resource.");
+      return;
+    }
+    const resources = picked.map(p => p.split("|")[1]);
+    const categories = [...new Set(picked.map(p => p.split("|")[0]))];
+    const v = await api.createOffer({
+      name, contact, location:loc, lat:coords.lat, lng:coords.lng,
+      resources, categories, radiusKm:parseInt(range.value,10),
+      note:body.querySelector("#o-note").value.trim()
+    });
+    closeModal(); render();
+    toast("match","Offer listed", `${v.name} is on the board with ${resources[0].toLowerCase()} inside ${v.radiusKm} km.`);
+    logEvent("match", `<b>${esc(v.name)}</b> listed ${esc(resources.join(", "))} within ${v.radiusKm} km.`);
+    setTimeout(() => suggestForVolunteer(v), 1500);
+  });
+  return m;
+}
+
+/* ---------- Triage modal ---------- */
+const SAMPLES = [
+  "I am trapped on the 2nd floor on Oak Street, my elderly mom needs insulin and the water is on the stairs",
+  "Power has been out since 6pm, house is down to 10 degrees and I have a newborn",
+  "Our street is fine but we have no drinking water left for four people",
+  "Bimaari maa ko dawai chahiye, road par paani bhara hai aur hum bahar nahi ja sakte"
+];
+function triageModal(){
+  const m = modalShell("Bedrock incident triage", "Describe what is happening in your own words or language. The model scores it and finds who can help.", true);
+  const body = m.querySelector(".modal-body");
+  body.innerHTML = `
+    <div class="field">
+      <label for="t-text">What is happening</label>
+      <div class="mic-row">
+        <textarea id="t-text" placeholder="I am trapped on the 2nd floor on Oak Street, my elderly mom needs insulin…"></textarea>
+      </div>
+      <div class="mic-row" style="margin-top:8px">
+        <button class="mic" id="t-mic" type="button" aria-label="Speak instead of typing">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+        </button>
+        <span class="help" id="t-mic-hint">Tap the mic to dictate instead of typing.</span>
+      </div>
+    </div>
+    <div class="field">
+      <span class="help">Try one of these</span>
+      <div class="samples" id="t-samples"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" id="t-cancel">Cancel</button>
+      <button class="btn btn-ai" type="button" id="t-run">Analyze and triage</button>
+    </div>
+    <div id="t-result"></div>`;
+
+  const ta = body.querySelector("#t-text");
+  const sampleWrap = body.querySelector("#t-samples");
+  SAMPLES.forEach(s => {
+    const b = el("button","", s.length > 52 ? s.slice(0,50) + "…" : s);
+    b.type = "button";
+    b.addEventListener("click", () => { ta.value = s; ta.focus(); });
+    sampleWrap.appendChild(b);
+  });
+
+  // Speech input, where the browser offers it
+  const mic = body.querySelector("#t-mic");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    mic.disabled = true; mic.style.opacity = ".45";
+    body.querySelector("#t-mic-hint").textContent = "This browser has no speech input. Type the request instead.";
+  }else{
+    let rec = null;
+    mic.addEventListener("click", () => {
+      if(rec){ rec.stop(); return; }
+      rec = new SR();
+      rec.lang = navigator.language || "en-US";
+      rec.interimResults = true;
+      rec.continuous = false;
+      const startedWith = ta.value ? ta.value + " " : "";
+      rec.onresult = e => {
+        let txt = "";
+        for(let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+        ta.value = startedWith + txt;
+      };
+      rec.onerror = () => { body.querySelector("#t-mic-hint").textContent = "Speech input did not start. Check the mic permission, or type it."; };
+      rec.onend = () => { mic.dataset.rec = "0"; rec = null; body.querySelector("#t-mic-hint").textContent = "Tap the mic to dictate instead of typing."; };
+      rec.start();
+      mic.dataset.rec = "1";
+      body.querySelector("#t-mic-hint").textContent = "Listening — tap again to stop.";
+    });
+  }
+
+  body.querySelector("#t-cancel").addEventListener("click", closeModal);
+  body.querySelector("#t-run").addEventListener("click", () => runTriage(ta.value.trim(), body));
+  return m;
+}
+
+async function runTriage(text, body){
+  const out = body.querySelector("#t-result");
+  if(!text){
+    toast("hazard","Nothing to analyze","Describe the situation in a sentence or two first.");
+    return;
+  }
+  out.innerHTML = `<div class="result"><div class="thinking"><span class="spin"></span><span id="t-progress">Reading the report and scoring urgency…</span></div></div>`;
+  let res;
+  try{
+    res = await api.triage(text);
+  }catch(err){
+    res = Bedrock.local(text);
+    res.engine = "local";
+    res.fellBack = err && err.code ? err.code : "unavailable";
+  }
+  renderTriage(res, text, out);
+}
+
+function renderTriage(res, text, out){
+  const urg = scoreToUrgency(res.urgencyScore);
+  const color = urg === "critical" ? "var(--crimson)" : urg === "high" ? "var(--amber)" : "var(--cyan)";
+  const pool = Dynamo.query("VOLUNTEER#").filter(v => v.status === "available");
+  let matches = rank({categories:res.categories, lat:50, lng:46}, pool).slice(0,3);
+  if(res.volunteerIds && res.volunteerIds.length){
+    const picked = res.volunteerIds.map(id => matches.find(m => m.id === id)).filter(Boolean);
+    const rest = matches.filter(m => !res.volunteerIds.includes(m.id));
+    matches = picked.concat(rest).slice(0,3);
+  }
+  const circ = 2 * Math.PI * 38;
+  const dash = circ * (res.urgencyScore / 10);
+
+  out.innerHTML = `<div class="result">
+    <div class="score-block">
+      <div class="dial">
+        <svg width="88" height="88"><circle cx="44" cy="44" r="38" fill="none" stroke="#1B2942" stroke-width="7"/>
+        <circle cx="44" cy="44" r="38" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round"
+          stroke-dasharray="${dash} ${circ}"/></svg>
+        <div class="val" style="color:${color}">${res.urgencyScore}<small>of 10</small></div>
+      </div>
+      <div class="score-meta">
+        <h3>${esc(res.summary)}</h3>
+        <p>${esc(res.rationale || "")}</p>
+        <span class="tag tag-${urg}" style="justify-self:start">${URGENCIES[urg].label}</span>
+      </div>
+    </div>
+
+    <dl class="kv">
+      <div class="kv-row"><dt>Categorised as</dt><dd>${res.categories.map(c => `<span class="need">${CATEGORIES[c].icon} ${CATEGORIES[c].label}</span>`).join(" ")}</dd></div>
+      <div class="kv-row"><dt>Dispatcher action</dt><dd>${esc(res.recommendedAction || "Assign the nearest capable volunteer.")}</dd></div>
+    </dl>
+
+    <div>
+      <div class="kv-row" style="margin-bottom:8px"><dt>Nearby volunteers</dt><dd style="color:var(--ink-3);font-size:12px">${matches.length ? "best fit first" : ""}</dd></div>
+      <div class="match-list">${
+        matches.length ? matches.map(v => `<div class="match">
+          <div class="avatar">${esc(v.name.split(" ").map(p=>p[0]).join("").slice(0,2))}</div>
+          <div class="m-body"><strong>${esc(v.name)}</strong><span>${esc(v.resources.slice(0,2).join(" · "))} · ${esc(v.location)}</span></div>
+          <div class="m-score">${v._km} km</div></div>`).join("")
+        : `<div class="notice">No free volunteer covers that need right now. Posting it still pages everyone in the area as they come back online.</div>`
+      }</div>
+    </div>
+
+    <div class="notice">${res.engine === "bedrock"
+      ? "Scored by Claude on Bedrock. Nothing is dispatched until you post it."
+      : "Scored by the on-device classifier because the model link is unavailable. Nothing is dispatched until you post it."}</div>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" id="t-edit">Edit details first</button>
+      <button class="btn btn-sos" type="button" id="t-post">Post to the board</button>
+    </div>
+  </div>`;
+
+  out.querySelector("#t-edit").addEventListener("click", () => {
+    closeModal();
+    openModal(sosModal({detail:text, categories:res.categories, urgency:urg}));
+  });
+  out.querySelector("#t-post").addEventListener("click", async () => {
+    const inc = await api.createSOS({
+      name:"Reported by triage", phone:"", location:guessLocation(text),
+      lat:22 + Math.random()*58, lng:22 + Math.random()*54,
+      categories:res.categories, urgency:urg, urgencyScore:res.urgencyScore,
+      summary:res.summary, detail:text, source:"triage"
+    });
+    closeModal(); render();
+    toast("sos", urg === "critical" ? "Critical SOS posted" : "SOS posted",
+      `${inc.summary.slice(0,72)}${inc.summary.length > 72 ? "…" : ""}`);
+    logEvent("sos", `Triage scored <b>${res.urgencyScore}/10</b> at ${esc(inc.location)} — ${res.categories.map(c=>CATEGORIES[c].label).join(", ")}.`);
+    if(matches.length) setTimeout(() => doMatch(inc.id, matches[0].id), 1600);
+  });
+  out.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+function guessLocation(text){
+  const m = (text||"").match(/\b\d{1,4}\s+[A-Z][a-zA-Z]+(?:\s(?:St|Street|Ave|Avenue|Rd|Road|Ln|Lane|Ct|Court|Blvd))\b/);
+  if(m) return m[0];
+  const street = (text||"").match(/\b([A-Z][a-zA-Z]+)\s(?:Street|St|Avenue|Ave|Road|Rd|Lane|Ln)\b/);
+  return street ? street[0] : "Location pending callback";
+}
+
+/* auto-suggestion after a post */
+function autoSuggest(inc){
+  if(inc.status !== "open") return;
+  const pool = Dynamo.query("VOLUNTEER#").filter(v => v.status === "available");
+  const best = rank(inc, pool)[0];
+  if(!best) return;
+  toast("match","Possible match found", `${best.name} has ${best.resources[0].toLowerCase()} ${best._km} km away. Open the card to dispatch.`);
+  logEvent("match", `Suggested <b>${esc(best.name)}</b> for ${esc(inc.location)} — ${best._km} km out.`);
+}
+function suggestForVolunteer(v){
+  const open = Dynamo.query("INCIDENT#").filter(i => i.status === "open");
+  const fits = open.map(i => Object.assign({}, i, {_km:distanceKm(i, v), _o:(i.categories||[]).filter(c => v.categories.includes(c)).length}))
+    .filter(i => i._o > 0).sort((a,b) => a._km - b._km);
+  if(!fits.length) return;
+  const i = fits[0];
+  toast("match","A request needs you", `${i.location} — ${i.summary.slice(0,58)}… ${i._km} km from you.`);
+  logEvent("match", `Matched <b>${esc(v.name)}</b> to an open request at ${esc(i.location)}.`);
+}
+
+/* ============================================================
+   14. VIEW TOGGLE, MAP TOOLS, WIRING
+   ============================================================ */
+function setView(v){
+  state.view = v;
+  const map = v === "map";
+  $("#mapwrap").hidden = !map;
+  $("#feed").hidden = map;
+  $("#view-map").setAttribute("aria-pressed", String(map));
+  $("#view-feed").setAttribute("aria-pressed", String(!map));
+  $("#stage-title").textContent = map ? "Incident map — Sector 7" : "Live feed — newest and most urgent first";
+  $("#stage-hint").textContent = map ? "tap a pin for details" : "open requests lead the board";
+  if(!map) closeCallout();
+}
+function applyZoom(){
+  $("#mapcanvas").style.transform = `scale(${state.zoom})`;
+}
+
+function wire(){
+  $$("[data-open]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.open;
+    openModal(k === "sos" ? sosModal() : k === "offer" ? offerModal() : triageModal());
+  }));
+  $("#view-map").addEventListener("click", () => setView("map"));
+  $("#view-feed").addEventListener("click", () => setView("feed"));
+  $("#zoom-in").addEventListener("click", () => { state.zoom = Math.min(2.4, state.zoom + 0.28); applyZoom(); });
+  $("#zoom-out").addEventListener("click", () => { state.zoom = Math.max(1, state.zoom - 0.28); applyZoom(); });
+  $("#recenter").addEventListener("click", () => { state.zoom = 1; applyZoom(); closeCallout(); });
+  $("#mapwrap").addEventListener("click", closeCallout);
+
+  const tick = () => {
+    const d = new Date();
+    $("#clock").textContent = "Board time " + d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false});
+  };
+  tick(); setInterval(tick, 30000);
+  setInterval(() => { if(state.view === "feed") renderFeed(
+    Dynamo.query("INCIDENT#").filter(passes),
+    Dynamo.query("VOLUNTEER#").filter(passes),
+    Dynamo.query("HAZARD#").filter(passes)); }, 60000);
+}
+
+/* ============================================================
+   15. BOOT
+   ============================================================ */
+function boot(){
+  const restored = Dynamo.hydrate();
+  if(!restored) seed();
+  buildFilters();
+  wire();
+  setView("map");
+  render();
+
+  logEvent("hazard", `Hazard posted — <b>Mill Bridge underwater</b>, no vehicle crossings.`);
+  logEvent("sos", `<b>Priya Raghunathan</b> reported trapped at 212 Oak St — insulin needed.`);
+  logEvent("info", `Sector 7 board opened. ${Dynamo.query("VOLUNTEER#").length} volunteers on file.`);
+
+  setTimeout(() => toast("info","Board is live",
+    "Five requests, four volunteer offers and three hazards are on the map for Sector 7."), 900);
+
+  Bedrock.link().then(ok => {
+    $("#model-status").textContent = ok
+      ? "anthropic.claude · us-east-1 · link ready"
+      : "on-device classifier · model link unavailable";
+    if(!ok) $(".model-line i").style.background = "var(--amber)";
+  });
+}
+
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+})();
+</script>
+</body>
+</html>
